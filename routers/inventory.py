@@ -85,8 +85,6 @@ async def create_request(request: RequestCreate):
 
 @router.get("/get_request_with_items_status/{request_id}/{campus_name}", response_model=RequestIssueResponse, tags=["Clg_Stock"])
 async def get_request_with_items(request_id: str, campus_name: str):
-    print(request_id)
-    print(campus_name)
     request = await Request.get(request_id, fetch_links=True)
     if not request or request.campus_name != campus_name:
         raise HTTPException(status_code=404, detail="Request not found")

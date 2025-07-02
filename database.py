@@ -51,5 +51,3 @@ async def init_db():
     except Exception as e:
         print(f"❌ Failed to connect to database: {e}")
         raise
-
-

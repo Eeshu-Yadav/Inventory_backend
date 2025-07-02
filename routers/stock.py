@@ -160,7 +160,7 @@ async def issue_request(request_id: str, issue: List[ReqIssueBase]):
 async def reject_request(request_id: str, reason: str):
     try:
         # Fetch the request from the database
-        request = await Request.get(request_id)
+        request = await Request.get(request_id, fetch_links=True)
         if not request:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
 
@@ -200,7 +200,8 @@ async def reject_request(request_id: str, reason: str):
             date_of_request=request.date_of_request,
             status=request.status,
             reason=request.reason,
-            items=[{"item_name": i.item_name, "qty": i.qty} for i in request.items]
+            items=[{"item_name": i.item_name, "qty": i.qty} for i in request.items or []],
+            issued=[]
     )
 
     except Exception as e:
