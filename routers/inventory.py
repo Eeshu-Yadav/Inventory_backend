@@ -75,7 +75,8 @@ async def create_request(request: RequestCreate):
         status=request_model.status,
         items=[{
             "item_name": item.item_name,
-            "qty": item.qty
+            "qty": item.qty,
+            "description" : item.description
         } for item in item_models]
     )
 
@@ -83,7 +84,9 @@ async def create_request(request: RequestCreate):
 # Fetch Request with Items status
 
 @router.get("/get_request_with_items_status/{request_id}/{campus_name}", response_model=RequestIssueResponse, tags=["Clg_Stock"])
-async def get_request_with_items(request_id: int, campus_name: str):
+async def get_request_with_items(request_id: str, campus_name: str):
+    print(request_id)
+    print(campus_name)
     request = await Request.get(request_id, fetch_links=True)
     if not request or request.campus_name != campus_name:
         raise HTTPException(status_code=404, detail="Request not found")
