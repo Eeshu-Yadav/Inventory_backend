@@ -8,6 +8,7 @@ router = APIRouter(prefix="/vc", tags=["VC"])
 
 def build_request_response(request: Request) -> RequestIssueResponse:
     return RequestIssueResponse(
+        request_id=str(request.id),
         campus_name=request.campus_name,
         date_of_request=request.date_of_request,
         status=request.status,
