@@ -1,0 +1,104 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Environment files
+.env
+.env.*
+*.env
+
+# Virtual environments
+venv/
+env/
+.venv/
+.python-version
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+coverage.xml
+*.cover
+.cache
+nosetests.xml
+test-results.xml
+pytest_cache/
+.pytest_cache/
+
+# Pyre type checker
+.pyre/
+
+# Mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyright
+pyrightconfig.json
+
+# PyLint
+.pylint.d/
+
+# Bandit
+output.json
+
+# VS Code
+.vscode/
+
+# IDEs
+.idea/
+*.iml
+
+# Mac / Windows / Linux
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Docker
+docker-compose.override.yml
+*.pid
+
+# Beanie/MongoDB-related
+*.lock
+*.bak
+
+# SQLite (if used for testing)
+*.sqlite3
+*.db
+
+# FastAPI-specific (optional, if you use compiled templates or static)
+staticfiles/
+templates_compiled/
+
+# Pydantic cache
+__pydantic__/
