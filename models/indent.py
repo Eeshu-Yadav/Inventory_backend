@@ -1,6 +1,5 @@
-from beanie import Document,Link
+from beanie import Document
 from pydantic import BaseModel, Field ,ConfigDict
-from typing import List, Optional
 from datetime import date
 from models.stock import ItemTypeEnum
 

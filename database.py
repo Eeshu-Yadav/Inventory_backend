@@ -12,14 +12,12 @@ from beanie import Document
 load_dotenv()
 
 
-# PostgreSQL database configuration
 MONGO_URI = os.getenv("MONGO_URI")
 DB_NAME = os.getenv("DB_NAME")
 MAX_CONNECTION_RETRIES = 3
 CONNECTION_TIMEOUT_MS = 5000
 
 
-# Async init function for DB
 async def init_db():
     """
     Initialize the MongoDB connection and Beanie document models.
@@ -30,11 +28,9 @@ async def init_db():
         serverSelectionTimeoutMS=CONNECTION_TIMEOUT_MS
     )
     try:
-        # Test the connection
         await client.admin.command('ping')
         db = client[DB_NAME]
         
-        # Get all Document models automatically
         document_models: List[Type[Document]] = [
             Request, RequestItem, ReqIssue, 
             Indent, Stock, Item

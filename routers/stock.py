@@ -94,11 +94,23 @@ async def issue_request(request_id: str, issue: List[ReqIssueBase]):
         request = await Request.get(ObjectId(request_id), fetch_links=True)
         if not request:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
+        
+        if request.status != "Pending":
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Request has already been '{request.status.value}' and cannot be approved again.")
 
-        request.status = "Approved"
-        request.date_of_approval = date.today()
-        issues = []
+        issued_items = []
         for item in issue:
+            stock_items = await Item.find_one(Item.item_name == item.item_name)
+            if not stock_items:
+                raise HTTPException (status_code=status.HTTP_404_NOT_FOUND ,detail= "Item Not Found")
+            
+            if item.qty>stock_items.item_quantity:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="insufficient Items")
+            
+            stock_items.item_quantity = stock_items.item_quantity - item.qty
+
+            await stock_items.save()
+
             issue_doc = ReqIssue(
                 item_name=item.item_name,
                 qty=item.qty,
@@ -106,9 +118,13 @@ async def issue_request(request_id: str, issue: List[ReqIssueBase]):
                 request=request
             )
             await issue_doc.insert()
-            issues.append(issue_doc)
+            issued_items.append(issue_doc)
+        
+        
 
-        request.issued = issues
+        request.status = "Approved"
+        request.date_of_approval = date.today()
+        request.issued = issued_items
         await request.save()
     
         # Create an HTML template
@@ -120,7 +136,7 @@ async def issue_request(request_id: str, issue: List[ReqIssueBase]):
         <p><strong>Status:</strong> Approved</p>
         <p><strong>Date of Approval:</strong> {request.date_of_approval}</p>
         <h2>Items</h2>
-        <ul>{''.join([f'<li>{i.item_name}: {i.qty} ({i.Item_Type})</li>' for i in issues])}</ul>
+        <ul>{''.join([f'<li>{i.item_name}: {i.qty} ({i.Item_Type})</li>' for i in issued_items])}</ul>
         </body></html>
         """
         
@@ -153,23 +169,20 @@ async def issue_request(request_id: str, issue: List[ReqIssueBase]):
         status=request.status,
         reason=request.reason,
         items=[{"item_name": i.item_name, "qty": i.qty} for i in request.items],
-        issued=[{"item_name": i.item_name, "qty": i.qty, "Item_Type": i.Item_Type} for i in issues]
+        issued=[{"item_name": i.item_name, "qty": i.qty, "Item_Type": i.Item_Type} for i in issued_items]
     )
 
 @router.post("/reject_request/{request_id}/{reason}", response_model=RequestIssueResponse, tags=["Central_Stock"],response_model_exclude={"issued"})
 async def reject_request(request_id: str, reason: str):
     try:
-        # Fetch the request from the database
         request = await Request.get(request_id, fetch_links=True)
         if not request:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
 
-        # Update the request status to Rejected and add the reason
         request.status = "Rejected"
-        request.reason = reason# Corrected: Use dot notation to set the reason field
+        request.reason = reason
         await request.save()
         
-        # Prepare the email content
         html = f"""
         <html>
         <body>
@@ -190,7 +203,6 @@ async def reject_request(request_id: str, reason: str):
             subtype=MessageType.html
         )
 
-        # Send the email
         fm = FastMail(conf)
         await fm.send_message(message)
 

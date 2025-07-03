@@ -22,8 +22,6 @@ class Request(RequestBase, Document):
     date_of_request: date = Field(default_factory=date.today)
     status: StatusEnum = Field(default=StatusEnum.Pending)
     date_of_approval: Optional[date] = None
-    # items: Optional[List[Link["RequestItem"]]] = []
-    # issued: Optional[List[Link["ReqIssue"]]] = []
     items: List[Link["RequestItem"]] = Field(default_factory=list)
     issued: List[Link["ReqIssue"]] = Field(default_factory=list)
 
