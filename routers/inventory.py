@@ -34,7 +34,6 @@ async def create_request(request: RequestCreate):
             
             item_models.append(item_model)
         
-        # Update request with links to items
         request_model.items = item_models
         await request_model.save()
 

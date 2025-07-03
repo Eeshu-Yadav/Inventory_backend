@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from models.inventory import Request, RequestItem, ReqIssue
 from models.indent import Indent
-from models.stock import Stock, Item
+from models.stock import Stock, Item, InventoryItemTotal
 from typing import List, Type
 from beanie import Document
 
@@ -33,7 +33,7 @@ async def init_db():
         
         document_models: List[Type[Document]] = [
             Request, RequestItem, ReqIssue, 
-            Indent, Stock, Item
+            Indent, Stock, Item, InventoryItemTotal
         ]
         
         await init_beanie(

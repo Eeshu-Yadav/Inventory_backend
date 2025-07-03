@@ -97,3 +97,8 @@ class CountsResponse(BaseModel):
     Approved: int
     Rejected: int
     Pending: int
+
+class InventoryItemTotal(Document):
+    item_name: str
+    total_quantity: int = 0
+    item_type: ItemTypeEnum

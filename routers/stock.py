@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from models.stock import Stock, Item, StockCreate, StockResponse, RequestIssueResponse, ReqIssueBase, StatusEnum
+from models.stock import Stock, Item, StockCreate, StockResponse, RequestIssueResponse, ReqIssueBase, InventoryItemTotal
 from typing import List
 from models.inventory import Request, ReqIssue, RequestIssueResponse2
 from datetime import date
@@ -44,9 +44,24 @@ async def create_stock(stock: StockCreate):
         await item_doc.insert()
         item_docs.append(item_doc)
 
+        # Update central inventory
+        existing = await InventoryItemTotal.find_one({
+            "item_name": item.item_name,
+            "item_type":item.item_type
+        })
+
+        if existing:
+            existing.total_quantity = existing.total_quantity + item.item_quantity
+            await existing.save()
+        else:
+            inventory_create = InventoryItemTotal(
+                item_name=item.item_name,
+                item_type=item.item_type,
+                total_quantity=item.item_quantity,
+            )
+            await inventory_create.insert()
     stock_model.items = item_docs
     await stock_model.save()
-
     return StockResponse(
         vendor_name=stock_model.vendor_name,
         date_of_order=stock_model.date_of_order,
@@ -100,16 +115,20 @@ async def issue_request(request_id: str, issue: List[ReqIssueBase]):
 
         issued_items = []
         for item in issue:
-            stock_items = await Item.find_one(Item.item_name == item.item_name)
-            if not stock_items:
-                raise HTTPException (status_code=status.HTTP_404_NOT_FOUND ,detail= "Item Not Found")
-            
-            if item.qty>stock_items.item_quantity:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="insufficient Items")
-            
-            stock_items.item_quantity = stock_items.item_quantity - item.qty
+            inventory_item = await InventoryItemTotal.find_one({
+                "item_name": item.item_name,
+                "item_type": item.Item_Type
+            })
 
-            await stock_items.save()
+            if not inventory_item:
+                raise HTTPException(status_code=404, detail=f"No inventory found for item: {item.item_name}")
+
+            if item.qty>inventory_item.total_quantity:
+                raise HTTPException(detail=f"Insufficient quantity for item: {item.item_name}")
+            
+            inventory_item.total_quantity = inventory_item.total_quantity - item.qty
+
+            await inventory_item.save()
 
             issue_doc = ReqIssue(
                 item_name=item.item_name,
@@ -153,10 +172,8 @@ async def issue_request(request_id: str, issue: List[ReqIssueBase]):
             logger.info("Email sent successfully")
         except Exception as email_error:
             logger.error(f"Failed to send email: {email_error}")
-            # Don't return error response for email failure, just log it
     
     except HTTPException:
-        # Re-raise HTTP exceptions (like 404)
         raise
     except Exception as e:
         logger.error(f"Error processing request: {e}")
@@ -233,3 +250,18 @@ async def get_issued_items():
             issued=[{"item_name": i.item_name, "qty": i.qty, "Item_Type": i.Item_Type} for i in full_req.issued or []]
         ))
     return result
+
+
+
+#for the total inventory items
+@router.get("/all_inventory_items", response_model=List[dict])
+async def get_all_inventory_items():
+    items = await InventoryItemTotal.find_all().to_list()
+    return [
+        {
+            "item_name": item.item_name,
+            "item_type": item.item_type,
+            "total_quantity": item.total_quantity
+        }
+        for item in items
+    ]
