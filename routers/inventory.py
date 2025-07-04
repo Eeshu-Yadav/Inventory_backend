@@ -1,15 +1,17 @@
 from fastapi import APIRouter, HTTPException, status
-from models.inventory import Request, RequestItem, ReqIssue, RequestCreate, RequestResponse, RequestIssueResponse
+from models.inventory import Request, RequestItem, MediatorApproval, RequestCreate, RequestResponse, RequestIssueResponse
 from fastapi.responses import JSONResponse
 from fastapi_mail import FastMail, MessageSchema, MessageType
 from typing import List
 from utils.mail import conf
 import logging
+from fastapi import Body
 
 router = APIRouter(prefix="/inventory", tags=["Clg_Stock"])
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 # Create Request with Items and send confirmation email
 @router.post("/create_request", response_model=RequestResponse, tags=["Clg_Stock"], description="Warning: If your mail_id is wrong then also your request has been submitted, please don't request again")
@@ -122,5 +124,46 @@ async def get_history(campus_name: str):
         logger.error(f"Failed to get history: {e}")
         return JSONResponse(status_code=500, content={"message": "Failed to get history"})
 
-        
+@router.post("/semi_approve/{request_id}" , tags=['Clg_Stock'])    
+async def semi_approve_request(request_id : str, ):
+    request = await Request.get(request_id,fetch_links=True)
+    if not request:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail = "Request ID is invalid")
+    
+    if request.status != "Pending":
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND , detail = "Request has already been '{request.status.value}' and cannot be approved again.")
+    
+    request.semi_approved =True
+    request.status = "Semi Approved"
+    await request.save()
+    return {"message" : "Request semi-approved", "request_id": str(request.id)}
+
+
+@router.post("/mediator_approved/{request_id}", tags = ['Clg_Stock'])
+async def approved_by_mediator(request_id : str , data: MediatorApproval = Body(...)):
+    # request = await Request.get(request_id, fetch_links=True)
+    request = await Request.get(request_id)
+    if not request:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail="Request ID is invalid")
+    
+    if not request.semi_approved:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST , detail= "Request must be semi approved")
+    
+    request.mediator_approved = True
+    request.employee_id= data.employee_id
+    request.status = "Mediator Approved"
+
+    await request.save()
+
+    return {
+        "message": "Approved by the Mediator",
+        "request_id" :str(request.id),
+        "employee_id" : request.employee_id,
+        "note" : "You must use this employee_id in the final isse stage"
+    }
+
+
+
+
+    
     

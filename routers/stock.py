@@ -101,17 +101,18 @@ async def get_stock_with_items(stock_id: str):
 
 
 # issue to the request
-@router.post("/item_issue_to_request/{request_id}", response_model=RequestIssueResponse, tags=["Central_Stock"], response_model_exclude={"reason"})
-async def issue_request(request_id: str, issue: List[ReqIssueBase]):
+@router.post("/final_approve_request/{request_id}", response_model=RequestIssueResponse, tags=["Central_Stock"], response_model_exclude={"reason"})
+async def final_approve_request(request_id: str, issue: List[ReqIssueBase]):
     try:
         if not ObjectId.is_valid(request_id):
             raise HTTPException(status_code=400, detail="Invalid request ID")
+        
         request = await Request.get(ObjectId(request_id), fetch_links=True)
         if not request:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
         
-        if request.status != "Pending":
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Request has already been '{request.status.value}' and cannot be approved again.")
+        if not request.semi_approved or not request.mediator_approved:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Request must be semi and mediator approved first")
 
         issued_items = []
         for item in issue:
@@ -134,7 +135,9 @@ async def issue_request(request_id: str, issue: List[ReqIssueBase]):
                 item_name=item.item_name,
                 qty=item.qty,
                 Item_Type=item.Item_Type,
+                employee_id=request.employee_id,
                 request=request
+                
             )
             await issue_doc.insert()
             issued_items.append(issue_doc)
@@ -154,6 +157,7 @@ async def issue_request(request_id: str, issue: List[ReqIssueBase]):
         <p><strong>Campus:</strong> {request.campus_name}</p>
         <p><strong>Status:</strong> Approved</p>
         <p><strong>Date of Approval:</strong> {request.date_of_approval}</p>
+        <p><strong>Employee ID:</strong> {request.employee_id}</p>
         <h2>Items</h2>
         <ul>{''.join([f'<li>{i.item_name}: {i.qty} ({i.Item_Type})</li>' for i in issued_items])}</ul>
         </body></html>

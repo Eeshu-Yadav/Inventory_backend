@@ -1,13 +1,15 @@
-from beanie import Document, Link, PydanticObjectId
+from beanie import Document, Link
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from datetime import date
-from typing import List, Optional, Annotated
+from typing import List, Optional
 import enum
-from models.stock import RequestItemResponse, ItemTypeEnum
+from models.stock import ItemTypeEnum
 
 # Enums
 class StatusEnum(str, enum.Enum):
     Pending = "Pending"
+    SemiApproved = "Semi Approved"
+    MediatorApproved = "Mediator Approved"
     Approved = "Approved"
     Rejected = "Rejected"
 
@@ -22,6 +24,9 @@ class Request(RequestBase, Document):
     date_of_request: date = Field(default_factory=date.today)
     status: StatusEnum = Field(default=StatusEnum.Pending)
     date_of_approval: Optional[date] = None
+    semi_approved: bool = False
+    mediator_approved: bool = False
+    employee_id: Optional[str] = None
     items: List[Link["RequestItem"]] = Field(default_factory=list)
     issued: List[Link["ReqIssue"]] = Field(default_factory=list)
 
@@ -29,6 +34,8 @@ class Request(RequestBase, Document):
         name="requests",
         arbitrary_types_allowed=True
     )
+class MediatorApproval(BaseModel):
+    employee_id: str
     
 class RequestItemBase(BaseModel):
     item_name: str
@@ -54,6 +61,7 @@ class ReqIssueBase(BaseModel):
 
 class ReqIssue(ReqIssueBase, Document):
     request: Optional[Link["Request"]] = None
+    employee_id: str
     model_config = ConfigDict(
         name="issued_items",
         arbitrary_types_allowed=True
