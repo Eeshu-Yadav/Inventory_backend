@@ -5,14 +5,6 @@ from typing import List, Optional
 from models.enums import ItemTypeEnum, StatusEnum
 from models.validators import validate_consumable_items
 
-ALLOWED_CONSUMABLE_ITEMS = [
-    "Brown Tape", "Transparent Tap Medium Size", "Clip Binder small", "Clip M Size (Boxes)", 
-    "Diary Register", "Fevicol (Gum) 100 Gram Bottle", "File Board", 
-    "File Cover with DSEU print", "File Tag Small (Bunch)", "Multi Color Flag/ Post it (pkt)",
-    "Nothing Sheet Legal- Ream","Paper Ream (A4 Size)","Pen Uniball Black" , "Punching Machine Double", "Stapler Heavy Duty",
-    "Stapler Small" , "Tissue Box","Extension Cord (Multiple Switches)"
-]
-
 class StockBase(BaseModel):
     vendor_name: str
     date_of_order: date
