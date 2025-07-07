@@ -2,24 +2,8 @@ from beanie import Document, Link
 from pydantic import BaseModel, Field, EmailStr, ConfigDict,model_validator
 from datetime import date
 from typing import List, Optional
-import enum
 from models.stock import ItemTypeEnum
-
-
-ALLOWED_CONSUMABLE_ITEMS = [
-    "Brown Tape", "Transparent Tap Medium Size", "Clip Binder small", "Clip M Size (Boxes)", 
-    "Diary Register", "Fevicol (Gum) 100 Gram Bottle", "File Board", 
-    "File Cover with DSEU print", "File Tag Small (Bunch)", "Multi Color Flag/ Post it (pkt)",
-    "Nothing Sheet Legal- Ream","Paper Ream (A4 Size)","Pen Uniball Black" , "Punching Machine Double", "Stapler Heavy Duty",
-    "Stapler Small" , "Tissue Box","Extension Cord (Multiple Switches)"
-]
-# Enums
-class StatusEnum(str, enum.Enum):
-    Pending = "Pending"
-    SemiApproved = "Semi Approved"
-    MediatorApproved = "Mediator Approved"
-    Approved = "Approved"
-    Rejected = "Rejected"
+from models.enums import StatusEnum
 
 
 # ----------- Base Models -----------
@@ -84,18 +68,7 @@ class RequestResponse(BaseModel):
 class ReqIssueResponse(BaseModel):
     item_name: str
     qty: int
-    Item_Type: ItemTypeEnum
-    @model_validator(mode="before")
-    @classmethod
-    def validate_non_consumable_item(cls, data):
-        item_type = data.get("item_type")
-        item_name = data.get("item_name")
-        if item_type == ItemTypeEnum.CONSUMABLE:
-            if item_name not in ALLOWED_CONSUMABLE_ITEMS:
-                raise ValueError(
-                    f"Invalid item for Non Consumable: '{item_name}'. Must be one of: {', '.join(ALLOWED_CONSUMABLE_ITEMS)}"
-                )
-        return data
+    item_Type: ItemTypeEnum
     
     
 class RequestIssueResponse(BaseModel):
