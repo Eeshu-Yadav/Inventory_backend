@@ -1,8 +1,16 @@
 from beanie import Document, Link
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 from datetime import date
 from typing import List, Optional
 import enum
+
+ALLOWED_CONSUMABLE_ITEMS = [
+    "Brown Tape", "Transparent Tap Medium Size", "Clip Binder small", "Clip M Size (Boxes)", 
+    "Diary Register", "Fevicol (Gum) 100 Gram Bottle", "File Board", 
+    "File Cover with DSEU print", "File Tag Small (Bunch)", "Multi Color Flag/ Post it (pkt)",
+    "Nothing Sheet Legal- Ream","Paper Ream (A4 Size)","Pen Uniball Black" , "Punching Machine Double", "Stapler Heavy Duty",
+    "Stapler Small" , "Tissue Box","Extension Cord (Multiple Switches)"
+]
 
 # Enums
 class ItemTypeEnum(str, enum.Enum):
@@ -42,12 +50,24 @@ class Item(ItemBase, Document):
         name="items",
         arbitrary_types_allowed=True
     )
+
     
 class ItemCreate(BaseModel):
     item_name: str
     item_type: ItemTypeEnum
     item_quantity: int = Field(gt=0)
     item_price: float = Field(gt=0)
+    @model_validator(mode="before")
+    @classmethod
+    def validate_non_consumable_item(cls, data):
+        item_type = data.get("item_type")
+        item_name = data.get("item_name")
+        if item_type == ItemTypeEnum.CONSUMABLE:
+            if item_name not in ALLOWED_CONSUMABLE_ITEMS:
+                raise ValueError(
+                    f"Invalid item for Non Consumable: '{item_name}'. Must be one of: {', '.join(ALLOWED_CONSUMABLE_ITEMS)}"
+                )
+        return data
 
 class StockCreate(StockBase):
     items: List[ItemCreate]
